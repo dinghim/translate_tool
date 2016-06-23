@@ -16,6 +16,7 @@ more demand, you can easily add more file support. The first time you run the pr
 trans, Automatically generate "config.ini" and "ignore.conf" file .you can modify these
 files according to your requirements
 
+```
 Usage:
     trans [command]
 
@@ -28,18 +29,22 @@ Flags:
       -h, --help   help for trans
 
 Use "trans [command] --help" for more information about a command.
+```
+SubCommand:
 
-getstring: Extract Chinese characters from a file or directory and save it to a text file
-
+getstring:
+	Extract Chinese characters from a file or directory and save it to a text file
+```
 Usage:
     trans getstring [flags]
 
 Flags:
     -d, --db string    File to save the extracted results (default "dictionary.txt")
     -s, --src string   The extracted file or directory path
-
-translate: Translation using dictionary file or directory. If the output does not exist will be created automatically
-
+```
+translate:
+	Translation using dictionary file or directory. If the output does not exist will be created automatically
+```
  Usage:
     trans translate [flags]
 
@@ -48,6 +53,7 @@ translate: Translation using dictionary file or directory. If the output does no
     -o, --output string   The output file or directory path translated
     -r, --routine int     Goroutine number. This is a test parameters (default 1)
     -s, --src string      Translated file or directory path
+```
 License
 -------------
 
