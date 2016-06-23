@@ -4,27 +4,50 @@ Description
 -----------
 
 Text translate tool
-    
+
 How to use
 -------------
 
-Build after install MinGW and Set GOPATH=Current catalog
-    
-Extract chinese character string, then generate "chinese.txt"(support lua, prefab and tab file)
- 
-    trans getstring path
-	
-Use artificial translated documents(trans.txt), update to "dictionary.db"
- 
-    trans update chinese.txt trans.txt
-	
-Translate all documents in the "srcdir". If the "desdir" does not exist will be created automatically
- 
-    trans translate srcdir desdir
-	
-The first time you run the program trans, Automatically generate "config.ini" and "ignore.conf" file
-you can modify these files according to your requirements
+Build after Set GOPATH=Current catalog
 
+Trans is a text translate tool that can help you to extract all chinese from
+file or directory. it can analyzes lua script, unity prefab and table file. If there is
+more demand, you can easily add more file support. The first time you run the program
+trans, Automatically generate "config.ini" and "ignore.conf" file .you can modify these
+files according to your requirements
+
+Usage:
+    trans [command]
+
+Available Commands:
+    getstring   Extract chinese characters
+    translate   Translation file or directory
+    version     View version
+
+Flags:
+      -h, --help   help for trans
+
+Use "trans [command] --help" for more information about a command.
+
+getstring: Extract Chinese characters from a file or directory and save it to a text file
+
+Usage:
+    trans getstring [flags]
+
+Flags:
+    -d, --db string    File to save the extracted results (default "dictionary.txt")
+    -s, --src string   The extracted file or directory path
+
+translate: Translation using dictionary file or directory. If the output does not exist will be created automatically
+
+ Usage:
+    trans translate [flags]
+
+ Flags:
+    -d, --db string       File to save the extracted results (default "dictionary.txt")
+    -o, --output string   The output file or directory path translated
+    -r, --routine int     Goroutine number. This is a test parameters (default 1)
+    -s, --src string      Translated file or directory path
 License
 -------------
 
