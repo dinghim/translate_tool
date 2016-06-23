@@ -1,89 +1,47 @@
 package analysis_test
 
 import (
-	"fmt"
+	"os"
 	"testing"
 	"trans/analysis"
 	"trans/filetool"
+	"trans/log"
 )
 
-func Test_lua(t *testing.T) {
-	ana := analysis.GetInstance()
-	ana.SetFilterFileEx([]string{"lua", "tab", "prefab"})
-	ana.SetRule(map[string]string{"lua": "lua_rules", "prefab": "prefab_rules", "tab": "table_rules"})
-	fanalysis, _, err := ana.GetRule("../test/test.lua")
+func Test_GetString(t *testing.T) {
+	flog, err := os.Create("../test/temp/log.txt")
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
-	filetool.GetInstance().SetEncoding("lua", "utf8")
-	text, err := filetool.GetInstance().ReadAll("../test/test.lua")
-	if err != nil {
-		t.Fatal(err)
-	}
-	entry, err := fanalysis(text)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, v := range entry {
-		fmt.Printf("%s\n", v)
-	}
+	defer flog.Close()
+	log.InitLog(flog)
+	ft := filetool.GetInstance()
+	ft.SetEncoding(".lua", "utf8")
+	ft.SetEncoding(".prefab", "utf8")
+	ft.SetEncoding(".tab", "gbk")
+	ft.SetEncoding(".txt", "gbk")
+	anal := analysis.GetInstance()
+	anal.SetRulesMap(".lua", "lua_rules")
+	anal.SetRulesMap(".prefab", "prefab_rules")
+	anal.SetRulesMap(".tab", "table_rules")
+	anal.SetRulesMap(".txt", "table_rules")
+	anal.SetFilterMap("filter")
+	anal.SetFilterMap("filter.lua")
+	anal.GetString("../test/temp/dictionary.txt", "../test/cn/")
 }
 
-func Test_prefab(t *testing.T) {
-	ana := analysis.GetInstance()
-	fanalysis, _, err := ana.GetRule("../test/cn/Boss.prefab")
-	if err != nil {
-		t.Fatal(err)
-	}
-	filetool.GetInstance().SetEncoding("prefab", "utf8")
-	text, err := filetool.GetInstance().ReadAll("../test/cn/Boss.prefab")
-	if err != nil {
-		t.Fatal(err)
-	}
-	entry, err1 := fanalysis(text)
-	if err1 != nil {
-		t.Fatal(err)
-	}
-	for k, v := range entry {
-		fmt.Printf("%d %s\n", k, v)
-	}
-}
-
-func Test_tab(t *testing.T) {
-	ana := analysis.GetInstance()
-	fanalysis, _, err := ana.GetRule("../test/cn/ScriptItem.tab")
-	if err != nil {
-		t.Fatal(err)
-	}
-	filetool.GetInstance().SetEncoding("tab", "gbk")
-	text, err := filetool.GetInstance().ReadAll("../test/cn/ScriptItem.tab")
-	if err != nil {
-		t.Fatal(err)
-	}
-	entry, err1 := fanalysis(text)
-	if err1 != nil {
-		t.Fatal(err)
-	}
-	for k, v := range entry {
-		fmt.Printf("%d %s\n", k, v)
-	}
-}
-
-func Benchmark_lua(b *testing.B) {
-	ana := analysis.GetInstance()
-	fanalysis, _, err := ana.GetRule("../test/test.lua")
-	if err != nil {
-		b.Fatal(err)
-	}
-	filetool.GetInstance().SetEncoding("lua", "utf8")
-	text, err := filetool.GetInstance().ReadAll("../test/test.lua")
-	if err != nil {
-		b.Fatal("can not read file")
-	}
-	for i := 0; i < b.N; i++ {
-		_, err = fanalysis(text)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
+func Test_Translate(t *testing.T) {
+	ft := filetool.GetInstance()
+	ft.SetEncoding(".lua", "utf8")
+	ft.SetEncoding(".prefab", "utf8")
+	ft.SetEncoding(".tab", "gbk")
+	ft.SetEncoding(".txt", "gbk")
+	anal := analysis.GetInstance()
+	anal.SetRulesMap(".lua", "lua_rules")
+	anal.SetRulesMap(".prefab", "prefab_rules")
+	anal.SetRulesMap(".tab", "table_rules")
+	anal.SetRulesMap(".txt", "table_rules")
+	anal.SetFilterMap("filter")
+	anal.SetFilterMap("filter.lua")
+	anal.Translate("../test/temp/dictionary.txt", "../test/cn/", "../test/temp/trans/", 1)
 }

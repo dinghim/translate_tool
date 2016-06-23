@@ -1,6 +1,6 @@
 TemplateId	Name	Kind	ItemType	Icon	BigIcon	CDType	ClassName	DetailType	Intro	ItemValue	Level	ObjID	Price	Quality	RequireLevel	Sellable	Stack	ExtParam1	ExtParam2	ExtParam3	ExtParam4	ExtParam5	ExtParam6	ExtParam7	ExtParam8	ExtParam9	ExtParam10	ShowType
 736	   碧玉扳指	antique_1	34	736	736		TaskItem	10	古董级别：1级（普通）\n\n古董可用来完成商会任务（30级开启）	12000	1	1	1000		1	1	99999											到底要怎么样
-755	战场黄金宝箱	Battle_award_1	34	100	100		RandomItemByLevel	1	完成战场后获得的宝箱		1	1	1000	4	1	0	99999	2										不知道怎样
+755	战场黄金宝箱	Battle_award_1	34	100	100		什么鬼	1	完成战场后获得的宝箱		1	1	1000	4	1	0	99999	2										不知道怎样
 2396	高级修为书	SkillExp_Lv3	34	600	600		SkillBookExp	1	研习后，增加10000点修为，可用来升级门派秘籍	20000	1	1	1000		1	0	99999	10000										
 765	名将挑战宝箱	Boss_AttendAward_1	34	100	100		\script\item\task_pack.lua	1	参与历代名将挑战获得的宝箱	20000	1	1	1000	3	1	0	99999	3										
 1234	玫瑰花	qinmi_hua1	34	1023	1023		Rose	1	赠送好友后双方增加亲密度，只能对女性角色赠送\n[FFFE0D]每天只能给同一个好友赠送5朵[-]		1	1			1	0	99999											

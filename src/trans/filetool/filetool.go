@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -43,8 +44,7 @@ func GetInstance() *filetool {
 }
 
 func (ft *filetool) GetEncoding(file string) encoding.Encoding {
-	filev := strings.Split(file, ".")
-	file_ex := filev[len(filev)-1]
+	file_ex := path.Ext(file)
 	codingstring, ok := ft.file2coding[file_ex]
 	if !ok {
 		return nil
@@ -56,14 +56,22 @@ func (ft *filetool) GetEncoding(file string) encoding.Encoding {
 	return coding
 }
 
-func (ft *filetool) SetEncoding(file, codingstring string) error {
-	filev := strings.Split(file, ".")
-	file_ex := filev[len(filev)-1]
-	if _, ok := ft.encodingmap[codingstring]; !ok {
-		return errors.New(fmt.Sprintf("encoding not exsit [%s] %s", codingstring, file))
+func (ft *filetool) SetEncoding(file, codingstring string) (string, error) {
+	var oldstring string
+	file_ex := path.Ext(file)
+	if len(codingstring) > 0 {
+		if _, ok := ft.encodingmap[codingstring]; !ok {
+			return oldstring, errors.New(fmt.Sprintf("encoding not exsit [%s] %s", codingstring, file))
+		}
+		oldstring, _ = ft.file2coding[file_ex]
+		ft.file2coding[file_ex] = codingstring
+		return oldstring, nil
+	} else {
+		oldstring, _ = ft.file2coding[file_ex]
+		delete(ft.file2coding, file_ex)
+		return oldstring, nil
 	}
-	ft.file2coding[file_ex] = codingstring
-	return nil
+
 }
 
 func (ft *filetool) GetFilesMap(path string) (map[int]string, error) {
