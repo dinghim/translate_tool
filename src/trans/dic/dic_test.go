@@ -11,9 +11,10 @@ func Test_example(t *testing.T) {
 	d := dic.New(file)
 	path := "test"
 	src := []byte("测试")
-	d.Append(path, src)
+	des := []byte("呵呵")
+	d.Append(path, src, des)
 	d.Save()
-	if trans, ok := d.Query(path, src); !ok {
+	if trans, ok := d.Query(src); !ok {
 		t.Log("no tanslate")
 	} else {
 		fmt.Printf("%s\n", trans)

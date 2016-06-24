@@ -1,7 +1,6 @@
 package analysis
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"path"
@@ -90,8 +89,8 @@ func (a *analysis) GetString(dbname, root string) {
 		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
 		return
 	}
-	var relativepath_total []string
-	var entry_total [][][]byte
+	newcount := 0
+	db := dic.New(dbname)
 	for i := 0; i < len(fmap); i++ {
 		if err := a.filter(fmap[i]); err != nil {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
@@ -111,36 +110,13 @@ func (a *analysis) GetString(dbname, root string) {
 		if err != nil {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
 		}
-		var entry_norepeat [][]byte
-		for i := 0; i < len(entry); i++ {
-			bNoRepeat := true
-			for j := 0; j < i; j++ {
-				if bytes.Compare(entry[i], entry[j]) == 0 {
-					bNoRepeat = false
-					break
-				}
-			}
-			if bNoRepeat {
-				entry_norepeat = append(entry_norepeat, entry[i])
-			}
+		relaticepath := strings.TrimLeft(strings.Split(fmap[i], root)[1], "/")
+		if len(relaticepath) == 0 {
+			relaticepath = path.Base(fmap[i])
 		}
-		if len(entry_norepeat) > 0 {
-			relaticepath := strings.TrimLeft(strings.Split(fmap[i], root)[1], "/")
-			if len(relaticepath) == 0 {
-				relaticepath = path.Base(fmap[i])
-			}
-			relativepath_total = append(relativepath_total, relaticepath)
-			entry_total = append(entry_total, entry_norepeat)
-		}
-	}
-	newcount := 0
-	db := dic.New(dbname)
-	for i := 0; i < len(relativepath_total); i++ {
-		path := relativepath_total[i]
-		entry := entry_total[i]
-		for j := 0; j < len(entry); j++ {
-			if _, ok := db.Query(path, entry[j]); !ok {
-				db.Append(path, entry[j])
+		for _, v := range entry {
+			if _, ok := db.Query(v); !ok {
+				db.Append(relaticepath, v, []byte(""))
 				newcount += 1
 			}
 		}
@@ -192,10 +168,10 @@ func (a *analysis) Translate(dbname, root, output string, queue int) {
 			goto Point
 		}
 		for _, v := range entry {
-			trans, ok := db.Query(relative, v)
+			trans, ok := db.Query(v)
 			if !ok {
 				mutex.Lock()
-				db.Append(relative, v)
+				db.Append(relative, v, []byte(""))
 				newcount += 1
 				mutex.Unlock()
 				continue

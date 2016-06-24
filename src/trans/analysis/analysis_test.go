@@ -1,7 +1,6 @@
 package analysis_test
 
 import (
-	"os"
 	"testing"
 	"trans/analysis"
 	"trans/filetool"
@@ -9,12 +8,6 @@ import (
 )
 
 func Test_GetString(t *testing.T) {
-	flog, err := os.Create("../test/temp/log.txt")
-	if err != nil {
-		panic(err)
-	}
-	defer flog.Close()
-	log.InitLog(flog)
 	ft := filetool.GetInstance()
 	ft.SetEncoding(".lua", "utf8")
 	ft.SetEncoding(".prefab", "utf8")
@@ -31,6 +24,7 @@ func Test_GetString(t *testing.T) {
 }
 
 func Test_Translate(t *testing.T) {
+	defer log.CloseLog()
 	ft := filetool.GetInstance()
 	ft.SetEncoding(".lua", "utf8")
 	ft.SetEncoding(".prefab", "utf8")

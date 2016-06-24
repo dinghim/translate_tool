@@ -10,13 +10,13 @@ import (
 type dic struct {
 	name  string
 	line  [][]byte
-	trans map[string]map[string]string
+	trans map[string]string
 }
 
 func New(file string) *dic {
 	ins := &dic{
 		name:  file,
-		trans: make(map[string]map[string]string),
+		trans: make(map[string]string),
 	}
 	ft := filetool.GetInstance()
 	oldEncode, _ := ft.SetEncoding(file, "utf8")
@@ -26,46 +26,41 @@ func New(file string) *dic {
 		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
 		return ins
 	}
-	for _, v := range ins.line {
+	for i := 0; i < len(ins.line); i++ {
+		v := ins.line[i]
 		linev := bytes.Split(v, []byte{0x09})
 		if len(linev) != 4 {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic abnormal] %s", v))
 			continue
 		}
-		path := string(linev[1])
 		key := string(linev[2])
-		value := string(linev[3])
-		if _, ok := ins.trans[path]; !ok {
-			ins.trans[path] = make(map[string]string)
+		if _, ok := ins.trans[key]; ok {
+			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic repeat] %s", key))
+			continue
 		}
-		ins.trans[path][key] = value
+		value := string(linev[3])
+		ins.trans[key] = value
 	}
 	ft.SetEncoding(file, oldEncode)
 	return ins
 }
 
-func (d *dic) Query(path string, text []byte) (trans []byte, ok bool) {
-	var strans string
+func (d *dic) Query(text []byte) ([]byte, bool) {
 	stext := string(text)
-	_, ok = d.trans[path]
-	if !ok {
-		return
-	}
-	strans, ok = d.trans[path][stext]
-	trans = []byte(strans)
-	return
+	strans, ok := d.trans[stext]
+	return []byte(strans), ok
 }
 
-func (d *dic) Append(path string, text []byte) {
+func (d *dic) Append(path string, text []byte, trans []byte) bool {
 	stext := string(text)
-	if _, ok := d.trans[path]; !ok {
-		d.trans[path] = make(map[string]string)
+	strans := string(trans)
+	if _, ok := d.trans[stext]; ok {
+		return false
 	}
-	if _, ok := d.trans[path][stext]; !ok {
-		d.trans[path][stext] = ""
-		line := []byte(fmt.Sprintf("%d\t%s\t%s\t%s", len(d.line)+1, path, stext, ""))
-		d.line = append(d.line, line)
-	}
+	d.trans[stext] = strans
+	line := []byte(fmt.Sprintf("%d\t%s\t%s\t%s", len(d.line)+1, path, stext, strans))
+	d.line = append(d.line, line)
+	return true
 }
 
 func (d *dic) Save() {

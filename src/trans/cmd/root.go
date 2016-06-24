@@ -29,10 +29,10 @@ var RootCmd = &cobra.Command{
 	Use:   "trans",
 	Short: "A text translate tool",
 	Long: `Trans is a text translate tool that can help you to extract all chinese from
-file or directory. it can analyzes lua script, unity prefab and table file. If there is
-more demand, you can easily add more file support. The first time you run the program  
-trans, Automatically generate "config.ini" and "ignore.conf" file .you can modify these 
-files according to your requirements`,
+file or directory. it can analyzes lua script, unity prefab and table file.
+If there is more demand, you can easily add more file support. The first time
+you run the programtrans, Automatically generate "config.ini" and "ignore.conf"
+file. you can modify these files according to your requirements`,
 
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
