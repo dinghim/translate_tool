@@ -1,5 +1,0 @@
-hello, world!
-you are a good man~
-how about golang language?
-personal rank
-这里是翻译
