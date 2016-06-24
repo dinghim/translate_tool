@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"path"
@@ -16,8 +17,8 @@ import (
 )
 
 type delegate interface {
-	GetString(text []byte) ([][]byte, error)
-	ReplaceOnce(context *[]byte, sText []byte, trans []byte) error
+	GetString(text []byte) ([][]byte, []int, []int, error)
+	Pretreat(trans []byte) []byte
 }
 
 type analysis struct {
@@ -60,11 +61,11 @@ func (a *analysis) getPool(file string) (delegate, error) {
 	}
 	switch rule {
 	case const_rule_lua:
-		return lua.GetInstance(), nil
+		return lua.New(), nil
 	case const_rule_prefab:
-		return prefab.GetInstance(), nil
+		return prefab.New(), nil
 	case const_rule_tablefile:
-		return tabfile.GetInstance(), nil
+		return tabfile.New(), nil
 	default:
 		return nil, errors.New(fmt.Sprintf("[not extract rule] %s", file))
 	}
@@ -106,7 +107,7 @@ func (a *analysis) GetString(dbname, root string) {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
 			continue
 		}
-		entry, err := ins.GetString(context)
+		entry, _, _, err := ins.GetString(context)
 		if err != nil {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
 		}
@@ -147,7 +148,14 @@ func (a *analysis) Translate(dbname, root, output string, queue int) {
 	mutex := &sync.Mutex{}
 	fwork := func(oldfile, newfile, relative string) {
 		defer pool.Done()
-		var entry [][]byte
+		var (
+			entry   [][]byte
+			start   []int
+			end     []int
+			context [][]byte
+			nStart  int
+			nSize   int
+		)
 		bv, err := ft.ReadAll(oldfile)
 		if err != nil {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
@@ -162,30 +170,45 @@ func (a *analysis) Translate(dbname, root, output string, queue int) {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
 			goto Point
 		}
-		entry, err = ins.GetString(bv)
+		entry, start, end, err = ins.GetString(bv)
 		if err != nil {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
 			goto Point
 		}
-		for _, v := range entry {
-			trans, ok := db.Query(v)
-			if !ok {
+		nStart = 0
+		nSize = len(bv)
+		for i := 0; i < len(entry); i++ {
+			context = append(context, bv[nStart:start[i]])
+			nStart = end[i]
+			if trans, ok := db.Query(entry[i]); ok {
+				if len(trans) > 0 {
+					context = append(context, ins.Pretreat(trans))
+				} else {
+					context = append(context, bv[start[i]:end[i]])
+					mutex.Lock()
+					db.Append(relative, entry[i], []byte(""))
+					newcount += 1
+					mutex.Unlock()
+				}
+			} else {
+				context = append(context, bv[start[i]:end[i]])
 				mutex.Lock()
-				db.Append(relative, v, []byte(""))
+				db.Append(relative, entry[i], []byte(""))
 				newcount += 1
 				mutex.Unlock()
-				continue
 			}
-			if len(trans) > 0 {
-				if err := ins.ReplaceOnce(&bv, v, trans); err != nil {
-					log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
-				}
-			}
+		}
+		if nStart < nSize {
+			context = append(context, bv[nStart:nSize])
 		}
 		transcount += 1
 	Point:
 		tatal += 1
-		ft.WriteAll(newfile, bv)
+		if len(context) > 0 {
+			ft.WriteAll(newfile, bytes.Join(context, []byte("")))
+		} else {
+			ft.WriteAll(newfile, bv)
+		}
 	}
 	for i := 0; i < len(fmap); i++ {
 		pool.Add(1)

@@ -1,10 +1,8 @@
 package lua
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"sync"
 )
 
 var (
@@ -32,14 +30,8 @@ const (
 
 type lua struct{}
 
-var instance *lua
-var once sync.Once
-
-func GetInstance() *lua {
-	once.Do(func() {
-		instance = &lua{}
-	})
-	return instance
+func New() *lua {
+	return &lua{}
 }
 
 func (l *lua) filter(text []byte) bool {
@@ -51,37 +43,41 @@ func (l *lua) filter(text []byte) bool {
 	return true
 }
 
-func (l *lua) GetString(text []byte) ([][]byte, error) {
-	var cnEntry [][]byte
+func (l *lua) GetString(context []byte) ([][]byte, []int, []int, error) {
+	var entryStart []int
+	var entryEnd []int
+	var entryTotal [][]byte
 	frecord := func(start, end int) {
-		slice := text[start : end+1]
+		slice := context[start:end]
 		if !l.filter(slice) {
-			cnEntry = append(cnEntry, slice)
+			entryStart = append(entryStart, start)
+			entryEnd = append(entryEnd, end)
+			entryTotal = append(entryTotal, slice)
 		}
 	}
 	nState := state_normal
 	nStateStart := 0
-	nSize := len(text)
+	nSize := len(context)
 	for i := 0; i < nSize; i++ {
-		if i+1 < nSize && text[i] == sl &&
-			(text[i+1] == ap || text[i+1] == dq || text[i+1] == sl) {
+		if i+1 < nSize && context[i] == sl &&
+			(context[i+1] == ap || context[i+1] == dq || context[i+1] == sl) {
 			i++
 			continue
 		}
 		switch nState {
 		case state_normal:
-			switch text[i] {
+			switch context[i] {
 			case bs:
-				if i+1 < nSize && text[i+1] == bs {
-					if i+3 < nSize && text[i+2] == bl {
+				if i+1 < nSize && context[i+1] == bs {
+					if i+3 < nSize && context[i+2] == bl {
 						nPos := i + 3
-						for nPos < nSize && text[nPos] == eq {
-							if text[nPos] == cr || text[nPos] == lf {
+						for nPos < nSize && context[nPos] == eq {
+							if context[nPos] == cr || context[nPos] == lf {
 								break
 							}
 							nPos++
 						}
-						if text[nPos] == bl {
+						if context[nPos] == bl {
 							i += (nPos - i)
 							nState = state_note_section
 						} else {
@@ -100,68 +96,68 @@ func (l *lua) GetString(text []byte) ([][]byte, error) {
 				nStateStart = i + 1
 				nState = state_double_quotes
 			case bl:
-				if i+1 < nSize && text[i+1] == bl {
+				if i+1 < nSize && context[i+1] == bl {
 					nStateStart = i + 2
 					nState = state_double_brackets
 					i += 1
 				}
 			}
 		case state_note_line:
-			if i+1 < nSize && text[i] == cr && text[i] == lf {
+			if i+1 < nSize && context[i] == cr && context[i] == lf {
 				i += 1
 				nState = state_normal
-			} else if text[i] == cr || text[i] == lf {
+			} else if context[i] == cr || context[i] == lf {
 				nState = state_normal
 			}
 		case state_note_section:
-			if text[i] == br {
+			if context[i] == br {
 				nPos := i + 1
-				for nPos < nSize && text[nPos] == eq {
-					if text[nPos] == cr || text[i] == lf {
+				for nPos < nSize && context[nPos] == eq {
+					if context[nPos] == cr || context[i] == lf {
 						break
 					}
 					nPos++
 				}
-				if text[nPos] == br {
+				if context[nPos] == br {
 					i += (nPos - i)
 					nState = state_normal
 				}
 			}
 		case state_apostrophe:
-			if i+1 < nSize && text[i] == cr && text[i] == lf {
-				frecord(nStateStart, i-1)
+			if i+1 < nSize && context[i] == cr && context[i] == lf {
+				frecord(nStateStart, i)
 				i += 1
 				nStateStart = i + 1
-			} else if text[i] == cr || text[i] == lf {
-				frecord(nStateStart, i-1)
+			} else if context[i] == cr || context[i] == lf {
+				frecord(nStateStart, i)
 				nStateStart = i + 1
-			} else if text[i] == ap {
-				frecord(nStateStart, i-1)
+			} else if context[i] == ap {
+				frecord(nStateStart, i)
 				nState = state_normal
 			}
 		case state_double_quotes:
-			if i+1 < nSize && text[i] == cr && text[i] == lf {
-				frecord(nStateStart, i-1)
+			if i+1 < nSize && context[i] == cr && context[i] == lf {
+				frecord(nStateStart, i)
 				i += 1
 				nStateStart = i + 1
-			} else if text[i] == cr || text[i] == lf {
-				frecord(nStateStart, i-1)
+			} else if context[i] == cr || context[i] == lf {
+				frecord(nStateStart, i)
 				nStateStart = i + 1
-			} else if text[i] == dq {
-				frecord(nStateStart, i-1)
+			} else if context[i] == dq {
+				frecord(nStateStart, i)
 				nState = state_normal
 			}
 		case state_double_brackets:
-			if i+1 < nSize && text[i] == cr && text[i] == lf {
-				frecord(nStateStart, i-1)
+			if i+1 < nSize && context[i] == cr && context[i] == lf {
+				frecord(nStateStart, i)
 				i += 1
 				nStateStart = i + 1
-			} else if text[i] == cr || text[i] == lf {
-				frecord(nStateStart, i-1)
+			} else if context[i] == cr || context[i] == lf {
+				frecord(nStateStart, i)
 				nStateStart = i + 1
-			} else if text[i] == br {
-				if i+1 < nSize && text[i+1] == br {
-					frecord(nStateStart, i-1)
+			} else if context[i] == br {
+				if i+1 < nSize && context[i+1] == br {
+					frecord(nStateStart, i)
 					i += 1
 					nState = state_normal
 				}
@@ -169,12 +165,11 @@ func (l *lua) GetString(text []byte) ([][]byte, error) {
 		}
 	}
 	if nState != state_normal && nState != state_note_line {
-		return cnEntry, errors.New(fmt.Sprintf("%s state:%d", "file syntax error", nState))
+		return entryTotal, entryStart, entryEnd, errors.New(fmt.Sprintf("[file syntax error] state: %d", nState))
 	}
-	return cnEntry, nil
+	return entryTotal, entryStart, entryEnd, nil
 }
 
-func (l *lua) ReplaceOnce(context *[]byte, sText []byte, trans []byte) error {
-	*context = bytes.Replace(*context, sText, trans, 1)
-	return nil
+func (l *lua) Pretreat(trans []byte) []byte {
+	return trans
 }

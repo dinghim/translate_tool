@@ -20,6 +20,7 @@ func New(file string) *dic {
 	}
 	ft := filetool.GetInstance()
 	oldEncode, _ := ft.SetEncoding(file, "utf8")
+	defer ft.SetEncoding(file, oldEncode)
 	var err error
 	ins.line, err = ft.ReadFileLine(file)
 	if err != nil {
@@ -41,7 +42,6 @@ func New(file string) *dic {
 		value := string(linev[3])
 		ins.trans[key] = value
 	}
-	ft.SetEncoding(file, oldEncode)
 	return ins
 }
 
@@ -66,9 +66,9 @@ func (d *dic) Append(path string, text []byte, trans []byte) bool {
 func (d *dic) Save() {
 	ft := filetool.GetInstance()
 	oldEncode, _ := ft.SetEncoding(d.name, "utf8")
+	defer ft.SetEncoding(d.name, oldEncode)
 	err := ft.SaveFileLine(d.name, d.line)
 	if err != nil {
 		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
 	}
-	ft.SetEncoding(d.name, oldEncode)
 }

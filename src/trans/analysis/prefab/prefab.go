@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 var (
@@ -29,14 +28,8 @@ var const_lf_flag []byte = []byte{10, 32, 32, 32, 32, 92}
 
 type prefab struct{}
 
-var instance *prefab
-var once sync.Once
-
-func GetInstance() *prefab {
-	once.Do(func() {
-		instance = &prefab{}
-	})
-	return instance
+func New() *prefab {
+	return &prefab{}
 }
 
 func (p *prefab) cleanWrap(text []byte) []byte {
@@ -63,11 +56,13 @@ func (p *prefab) filter(text []byte) bool {
 	return true
 }
 
-func (p *prefab) GetString(text []byte) ([][]byte, error) {
-	var cnEntry [][]byte
+func (p *prefab) GetString(context []byte) ([][]byte, []int, []int, error) {
+	var entryStart []int
+	var entryEnd []int
+	var entryTotal [][]byte
 	tag := fmt.Sprintf("%c%c", sl, uu)
 	frecord := func(start, end int) {
-		unicode := string(p.cleanWrap(text[start : end+1]))
+		unicode := string(p.cleanWrap(context[start:end]))
 		index := strings.Index(unicode, tag)
 		for ; index != -1; index = strings.Index(unicode, tag) {
 			hanzi, err := p.uc2hanzi(unicode[index+2 : index+6])
@@ -78,78 +73,43 @@ func (p *prefab) GetString(text []byte) ([][]byte, error) {
 		}
 		slice := []byte(unicode)
 		if !p.filter(slice) {
-			cnEntry = append(cnEntry, []byte(unicode))
+			entryStart = append(entryStart, start)
+			entryEnd = append(entryEnd, end)
+			entryTotal = append(entryTotal, []byte(unicode))
 		}
 	}
 	nState := state_normal
 	nStateStart := 0
-	nSize := len(text)
+	nSize := len(context)
 	for i := 0; i < nSize; i++ {
-		if text[i] == dq && i >= 7 && bytes.Compare(text[i-7:i-1], const_string_flag) == 0 {
+		if context[i] == dq && i >= 7 && bytes.Compare(context[i-7:i-1], const_string_flag) == 0 {
 			nStateStart = i + 1
 			nState = state_double_quotes
 			continue
 		}
 		switch nState {
 		case state_double_quotes:
-			if text[i] == dq {
-				frecord(nStateStart, i-1)
+			if context[i] == dq {
+				frecord(nStateStart, i)
 				nState = state_normal
 			}
 		}
 	}
 	if nState != state_normal {
-		return cnEntry, errors.New(fmt.Sprintf("%s state:%d", "file syntax error", nState))
+		return entryTotal, entryStart, entryEnd, errors.New(fmt.Sprintf("[file syntax error] state: %d", nState))
 	}
-	return cnEntry, nil
+	return entryTotal, entryStart, entryEnd, nil
 }
 
-func (p *prefab) ReplaceOnce(context *[]byte, sText []byte, trans []byte) error {
-	prefabformat := func(s string) string {
-		length := len(s)
-		for i := 0; i+5 < length; i++ {
-			if s[i] == sl && s[i+1] == uu {
-				upper := strings.ToUpper(s[i+2 : i+6])
-				s = strings.Replace(s, s[i+2:i+6], upper, 1)
-			}
-		}
-		return s
-	}
-
-	textQuoted := strconv.QuoteToASCII(string(sText))
-	textUnquoted := prefabformat(textQuoted[1 : len(textQuoted)-1])
-	textUnquoted = strings.Replace(textUnquoted, "\\\\", "\\", -1)
-
-	nState := state_normal
-	nStateStart := 0
-	text := *context
-	nSize := len(text)
-	found := false
-	var sTextReal []byte
-	for i := 0; i < nSize && !found; i++ {
-		if text[i] == dq && i >= 7 && bytes.Compare(text[i-7:i-1], const_string_flag) == 0 {
-			nStateStart = i + 1
-			nState = state_double_quotes
-			continue
-		}
-		switch nState {
-		case state_double_quotes:
-			if text[i] == dq {
-				unicode := p.cleanWrap(text[nStateStart:i])
-				if bytes.EqualFold(unicode, []byte(textUnquoted)) {
-					sTextReal = text[nStateStart:i]
-					found = true
-				}
-				nState = state_normal
-			}
+func (p *prefab) Pretreat(trans []byte) []byte {
+	sText := strconv.QuoteToASCII(string(trans))
+	sText = sText[1 : len(sText)-1]
+	for i := 0; i+5 < len(sText); i++ {
+		if sText[i] == sl && sText[i+1] == uu {
+			upper := strings.ToUpper(sText[i+2 : i+6])
+			sText = strings.Replace(sText, sText[i+2:i+6], upper, 1)
 		}
 	}
-	if !found {
-		return errors.New(fmt.Sprintf("[can not find %s]", sText))
-	}
-	transQuoted := strconv.QuoteToASCII(string(trans))
-	transUnquoted := prefabformat(transQuoted[1 : len(transQuoted)-1])
-	transUnquoted = strings.Replace(transUnquoted, "\\\\", "\\", -1)
-	*context = bytes.Replace(*context, sTextReal, []byte(transUnquoted), 1)
-	return nil
+	sText = strings.Replace(sText, "\\\\", "\\", -1)
+	return []byte(sText)
 }

@@ -1,10 +1,5 @@
 package tabfile
 
-import (
-	"bytes"
-	"sync"
-)
-
 var (
 	cr byte = 0x0d //回车CR
 	lf byte = 0x0a //换行LF
@@ -18,14 +13,8 @@ const (
 
 type tabfile struct{}
 
-var instance *tabfile
-var once sync.Once
-
-func GetInstance() *tabfile {
-	once.Do(func() {
-		instance = &tabfile{}
-	})
-	return instance
+func New() *tabfile {
+	return &tabfile{}
 }
 
 func (t *tabfile) filter(text []byte) bool {
@@ -37,21 +26,25 @@ func (t *tabfile) filter(text []byte) bool {
 	return true
 }
 
-func (t *tabfile) GetString(text []byte) ([][]byte, error) {
-	var cnEntry [][]byte
+func (t *tabfile) GetString(text []byte) ([][]byte, []int, []int, error) {
+	var entryStart []int
+	var entryEnd []int
+	var entryTotal [][]byte
 	frecord := func(nStart, nEnd int) {
-		textv := bytes.Split(text[nStart:nEnd], []byte{tb})
-		for _, v := range textv {
-			v = bytes.TrimSpace(v)
-			if !t.filter(v) {
-				cnEntry = append(cnEntry, v)
-			}
+		slice := text[nStart:nEnd]
+		if !t.filter(slice) {
+			entryStart = append(entryStart, nStart)
+			entryEnd = append(entryEnd, nEnd)
+			entryTotal = append(entryTotal, slice)
 		}
 	}
 	nStart := 0
 	length := len(text)
 	for i := 0; i < length; i++ {
-		if i+1 < length && text[i] == cr && text[i] == lf {
+		if text[i] == tb {
+			frecord(nStart, i)
+			nStart = i + 1
+		} else if i+1 < length && text[i] == cr && text[i] == lf {
 			frecord(nStart, i)
 			nStart = i + 2
 		} else if text[i] == cr || text[i] == lf {
@@ -59,10 +52,9 @@ func (t *tabfile) GetString(text []byte) ([][]byte, error) {
 			nStart = i + 1
 		}
 	}
-	return cnEntry, nil
+	return entryTotal, entryStart, entryEnd, nil
 }
 
-func (t *tabfile) ReplaceOnce(context *[]byte, sText []byte, trans []byte) error {
-	*context = bytes.Replace(*context, sText, trans, 1)
-	return nil
+func (t *tabfile) Pretreat(trans []byte) []byte {
+	return trans
 }

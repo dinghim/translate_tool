@@ -14,19 +14,11 @@ func Test_Example(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ins := prefab.GetInstance()
-	entry, err := ins.GetString(text)
+	entry, start, end, err := prefab.New().GetString(text)
 	if err != nil {
 		t.Fatal(err)
 	}
-	trans := []string{"test", "测试"}
 	for i := 0; i < len(entry); i++ {
-		fmt.Printf("%d %s\n", i+1, entry[i])
-		if err := ins.ReplaceOnce(&text, entry[i], []byte(fmt.Sprintf("%s-%d", trans[i%2], i))); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err = ft.WriteAll("../../test/temp/Boss.prefab", text); err != nil {
-		t.Fatal(err)
+		fmt.Printf("%d [%d:%d] %s\n", i+1, start[i], end[i], entry[i])
 	}
 }
