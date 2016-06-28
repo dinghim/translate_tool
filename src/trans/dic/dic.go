@@ -31,12 +31,12 @@ func New(file string) *dic {
 		v := ins.line[i]
 		linev := bytes.Split(v, []byte{0x09})
 		if len(linev) != 4 {
-			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic abnormal] %s", v))
+			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic abnormal] file:%s, line:%d, data:%s", file, i+1, v))
 			continue
 		}
 		key := string(linev[2])
 		if _, ok := ins.trans[key]; ok {
-			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic repeat] %s", key))
+			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic repeat] file:%s, line:%d, data:%s", file, i+1, key))
 			continue
 		}
 		value := string(linev[3])

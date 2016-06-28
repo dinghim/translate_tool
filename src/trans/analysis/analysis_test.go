@@ -24,7 +24,6 @@ func Test_GetString(t *testing.T) {
 }
 
 func Test_Translate(t *testing.T) {
-	defer log.CloseLog()
 	ft := filetool.GetInstance()
 	ft.SetEncoding(".lua", "utf8")
 	ft.SetEncoding(".prefab", "utf8")

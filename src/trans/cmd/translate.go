@@ -33,6 +33,10 @@ var translateCmd = &cobra.Command{
 	Long:  `Translation using dictionary file or directory. If the output does not exist will be created automatically`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: Work your own magic here
+		if len(translate_srcpath) == 0 || len(translate_output) == 0 {
+			cmd.Help()
+			return
+		}
 		analysis.GetInstance().Translate(
 			path.Clean(translate_dbname),
 			path.Clean(translate_srcpath),
@@ -53,7 +57,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// translateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	translateCmd.Flags().StringVarP(&translate_dbname, "db", "d", "dictionary.txt", "File to save the extracted results")
+	translateCmd.Flags().StringVarP(&translate_dbname, "db", "d", "dictionary.txt", "Translation data dictionary")
 	translateCmd.Flags().StringVarP(&translate_srcpath, "src", "s", "", "Translated file or directory path")
 	translateCmd.Flags().StringVarP(&translate_output, "output", "o", "", "The output file or directory path translated")
 	translateCmd.Flags().IntVarP(&translate_routine, "routine", "r", 1, "Goroutine number. This is a test parameters")

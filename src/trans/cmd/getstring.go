@@ -31,6 +31,10 @@ var getstringCmd = &cobra.Command{
 	Long:  `Extract Chinese characters from a file or directory and save it to a text file`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: Work your own magic here
+		if len(getstring_srcpath) == 0 {
+			cmd.Help()
+			return
+		}
 		analysis.GetInstance().GetString(path.Clean(getstring_dbname), path.Clean(getstring_srcpath))
 	},
 }
@@ -47,6 +51,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getstringCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	getstringCmd.Flags().StringVarP(&getstring_dbname, "db", "d", "dictionary.txt", "File to save the extracted results")
+	getstringCmd.Flags().StringVarP(&getstring_dbname, "db", "d", "dictionary.txt", "Translation data dictionary")
 	getstringCmd.Flags().StringVarP(&getstring_srcpath, "src", "s", "", "The extracted file or directory path")
 }
