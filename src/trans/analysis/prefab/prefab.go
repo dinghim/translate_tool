@@ -22,9 +22,18 @@ const (
 )
 
 var const_string_flag []byte = []byte{109, 84, 101, 120, 116, 58}
-var const_cr_lf_flag []byte = []byte{13, 10, 32, 32, 32, 32, 92}
-var const_cr_flag []byte = []byte{13, 32, 32, 32, 32, 92}
-var const_lf_flag []byte = []byte{10, 32, 32, 32, 32, 92}
+
+var const_clean_flag1 [][]byte = [][]byte{
+	{13, 10, 32, 32, 32, 32, 92, 32},
+	{13, 32, 32, 32, 32, 92, 32},
+	{10, 32, 32, 32, 32, 92, 32},
+}
+
+var const_clean_flag2 [][]byte = [][]byte{
+	{13, 10, 32, 32, 32, 32},
+	{13, 32, 32, 32, 32},
+	{10, 32, 32, 32, 32},
+}
 
 type prefab struct{}
 
@@ -33,9 +42,12 @@ func New() *prefab {
 }
 
 func (p *prefab) cleanWrap(text []byte) []byte {
-	text = bytes.Replace(text, const_cr_lf_flag, []byte{}, -1)
-	text = bytes.Replace(text, const_cr_flag, []byte{}, -1)
-	text = bytes.Replace(text, const_lf_flag, []byte{}, -1)
+	for _, v := range const_clean_flag1 {
+		text = bytes.Replace(text, v, []byte{32}, -1)
+	}
+	for _, v := range const_clean_flag2 {
+		text = bytes.Replace(text, v, []byte{}, -1)
+	}
 	return text
 }
 

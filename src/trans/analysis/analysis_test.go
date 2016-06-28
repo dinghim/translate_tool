@@ -4,7 +4,6 @@ import (
 	"testing"
 	"trans/analysis"
 	"trans/filetool"
-	"trans/log"
 )
 
 func Test_GetString(t *testing.T) {
