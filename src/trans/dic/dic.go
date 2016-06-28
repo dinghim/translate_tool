@@ -21,14 +21,13 @@ func New(file string) *dic {
 	ft := filetool.GetInstance()
 	oldEncode, _ := ft.SetEncoding(file, "utf8")
 	defer ft.SetEncoding(file, oldEncode)
-	var err error
-	ins.line, err = ft.ReadFileLine(file)
+	all, err := ft.ReadFileLine(file)
 	if err != nil {
 		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
 		return ins
 	}
-	for i := 0; i < len(ins.line); i++ {
-		v := ins.line[i]
+	for i := 1; i < len(all); i++ {
+		v := all[i]
 		linev := bytes.Split(v, []byte{0x09})
 		if len(linev) != 4 {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic abnormal] file:%s, line:%d, data:%s", file, i+1, v))
@@ -39,8 +38,8 @@ func New(file string) *dic {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic repeat] file:%s, line:%d, data:%s", file, i+1, key))
 			continue
 		}
-		value := string(linev[3])
-		ins.trans[key] = value
+		ins.trans[key] = string(linev[3])
+		ins.line = append(ins.line, v)
 	}
 	return ins
 }
@@ -67,7 +66,10 @@ func (d *dic) Save() {
 	ft := filetool.GetInstance()
 	oldEncode, _ := ft.SetEncoding(d.name, "utf8")
 	defer ft.SetEncoding(d.name, oldEncode)
-	err := ft.SaveFileLine(d.name, d.line)
+	var all [][]byte
+	all = append(all, []byte("ID\tFile\tOriginal\tTranslation"))
+	all = append(all, d.line...)
+	err := ft.SaveFileLine(d.name, all)
 	if err != nil {
 		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
 	}
