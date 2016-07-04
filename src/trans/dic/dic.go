@@ -39,7 +39,7 @@ func New(file string) *dic {
 			continue
 		}
 		ins.trans[key] = string(linev[3])
-		ins.line = append(ins.line, v)
+		ins.line = append(ins.line, bytes.Join(linev[1:], []byte{0x09}))
 	}
 	return ins
 }
@@ -57,7 +57,7 @@ func (d *dic) Append(path string, text []byte, trans []byte) bool {
 		return false
 	}
 	d.trans[stext] = strans
-	line := []byte(fmt.Sprintf("%d\t%s\t%s\t%s", len(d.line)+1, path, stext, strans))
+	line := []byte(fmt.Sprintf("%s\t%s\t%s", path, stext, strans))
 	d.line = append(d.line, line)
 	return true
 }
@@ -68,7 +68,9 @@ func (d *dic) Save() {
 	defer ft.SetEncoding(d.name, oldEncode)
 	var all [][]byte
 	all = append(all, []byte("ID\tFile\tOriginal\tTranslation"))
-	all = append(all, d.line...)
+	for k, v := range d.line {
+		all = append(all, []byte(fmt.Sprintf("%d\t%s", k+1, v)))
+	}
 	err := ft.SaveFileLine(d.name, all)
 	if err != nil {
 		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)

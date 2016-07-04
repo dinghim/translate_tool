@@ -143,7 +143,7 @@ func (a *analysis) Translate(dbname, root, output string, queue int) {
 		return
 	}
 	db := dic.New(dbname)
-	tatal, transcount, newcount := 0, 0, 0
+	copycount, transcount, newcount := 0, 0, 0
 	pool := gpool.New(queue)
 	mutex := &sync.Mutex{}
 	fwork := func(oldfile, newfile, relative string) {
@@ -184,14 +184,14 @@ func (a *analysis) Translate(dbname, root, output string, queue int) {
 				if len(trans) > 0 {
 					context = append(context, ins.Pretreat(trans))
 				} else {
-					context = append(context, bv[start[i]:end[i]])
+					context = append(context, entry[i])
 					mutex.Lock()
 					db.Append(relative, entry[i], []byte(""))
 					newcount += 1
 					mutex.Unlock()
 				}
 			} else {
-				context = append(context, bv[start[i]:end[i]])
+				context = append(context, entry[i])
 				mutex.Lock()
 				db.Append(relative, entry[i], []byte(""))
 				newcount += 1
@@ -201,13 +201,25 @@ func (a *analysis) Translate(dbname, root, output string, queue int) {
 		if nStart < nSize {
 			context = append(context, bv[nStart:nSize])
 		}
-		transcount += 1
 	Point:
-		tatal += 1
 		if len(context) > 0 {
-			ft.WriteAll(newfile, bytes.Join(context, []byte("")))
+			oldencoding, err := ft.SetEncoding(newfile, "utf8")
+			if err != nil {
+				log.WriteLog(log.LOG_PRINT|log.LOG_FILE, log.LOG_ERROR, err)
+			} else {
+				if err := ft.WriteAll(newfile, bytes.Join(context, []byte(""))); err != nil {
+					log.WriteLog(log.LOG_PRINT|log.LOG_FILE, log.LOG_ERROR, err)
+				} else {
+					transcount += 1
+				}
+				ft.SetEncoding(newfile, oldencoding)
+			}
 		} else {
-			ft.WriteAll(newfile, bv)
+			if err := ft.WriteAll(newfile, bv); err != nil {
+				log.WriteLog(log.LOG_PRINT|log.LOG_FILE, log.LOG_ERROR, err)
+			} else {
+				copycount += 1
+			}
 		}
 	}
 	for i := 0; i < len(fmap); i++ {
@@ -226,6 +238,6 @@ func (a *analysis) Translate(dbname, root, output string, queue int) {
 			fmt.Sprintf("generate %s, new line number: %d.", dbname, newcount))
 	}
 	log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO,
-		fmt.Sprintf("translate file %d, copy file %d. finished!", transcount, tatal-transcount))
+		fmt.Sprintf("translate file %d, copy file %d. finished!", transcount, copycount))
 	return
 }

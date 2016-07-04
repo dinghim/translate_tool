@@ -43,12 +43,18 @@ func GetInstance() *filetool {
 	return instance
 }
 
-func (ft *filetool) GetEncoding(file string) encoding.Encoding {
+func (ft *filetool) GetEncodeString(file string) string {
 	file_ex := path.Ext(file)
 	codingstring, ok := ft.file2coding[file_ex]
-	if !ok {
-		return nil
+	if ok {
+		return codingstring
+	} else {
+		return "Nil"
 	}
+}
+
+func (ft *filetool) GetEncoding(file string) encoding.Encoding {
+	codingstring := ft.GetEncodeString(file)
 	coding, ok := ft.encodingmap[codingstring]
 	if !ok {
 		return nil
@@ -71,7 +77,6 @@ func (ft *filetool) SetEncoding(file, codingstring string) (string, error) {
 		delete(ft.file2coding, file_ex)
 		return oldstring, nil
 	}
-
 }
 
 func (ft *filetool) GetFilesMap(path string) (map[int]string, error) {
@@ -107,7 +112,7 @@ func (ft *filetool) ReadAll(name string) ([]byte, error) {
 		reader := transform.NewReader(bytes.NewReader(context), coding.NewDecoder())
 		dcontext, err := ioutil.ReadAll(reader)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("%s %s", err.Error(), name))
+			return nil, errors.New(fmt.Sprintf("%s %s %s", err.Error(), name, ft.GetEncodeString(name)))
 		}
 		return dcontext, nil
 	}
@@ -126,7 +131,7 @@ func (ft *filetool) WriteAll(name string, context []byte) error {
 		reader := transform.NewReader(bytes.NewReader(context), coding.NewEncoder())
 		econtext, err := ioutil.ReadAll(reader)
 		if err != nil {
-			return errors.New(fmt.Sprintf("%s %s", err.Error(), name))
+			return errors.New(fmt.Sprintf("%s %s %s", err.Error(), name, ft.GetEncodeString(name)))
 		}
 		return ioutil.WriteFile(name, econtext, os.ModePerm)
 	}
@@ -164,7 +169,7 @@ func (ft *filetool) ReadFileLine(name string) ([][]byte, error) {
 				reader := transform.NewReader(bytes.NewReader(line), coding.NewDecoder())
 				dline, err := ioutil.ReadAll(reader)
 				if err != nil {
-					return nil, errors.New(fmt.Sprintf("%s %s", err.Error(), name))
+					return nil, errors.New(fmt.Sprintf("%s %s %s", err.Error(), name, ft.GetEncodeString(name)))
 				}
 				context = append(context, dline)
 			} else {
@@ -192,7 +197,7 @@ func (ft *filetool) SaveFileLine(name string, context [][]byte) error {
 					reader := transform.NewReader(bytes.NewReader(v), coding.NewEncoder())
 					ev, err := ioutil.ReadAll(reader)
 					if err != nil {
-						return errors.New(fmt.Sprintf("%s %s", err.Error(), name))
+						return errors.New(fmt.Sprintf("%s %s %s", err.Error(), name, ft.GetEncodeString(name)))
 					}
 					fmt.Fprintln(w, string(ev))
 				} else {
