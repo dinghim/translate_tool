@@ -20,7 +20,7 @@ func initConfig() {
 	ft := filetool.GetInstance()
 	bv, err := ft.ReadFileLine(const_config_file)
 	if err != nil {
-		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
+		//	log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
 		bv = [][]byte{
 			[]byte(";通过文件扩展名配置提取规则"),
 			[]byte(";支持‘lua_rules’，‘prefab_rules’，‘table_rules’"),
@@ -79,7 +79,7 @@ func initFilter() {
 	ft := filetool.GetInstance()
 	bv, err := ft.ReadFileLine(const_ignore_file)
 	if err != nil {
-		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
+		//	log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_INFO, err)
 		bv = [][]byte{
 			[]byte(";这里是忽略的文件，每个文件一行"),
 			[]byte(";例如test.lua"),
