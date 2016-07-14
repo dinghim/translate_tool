@@ -3,6 +3,7 @@ package dic
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"trans/filetool"
 	"trans/log"
 )
@@ -11,12 +12,14 @@ type dic struct {
 	name  string
 	line  [][]byte
 	trans map[string]string
+	max   int
 }
 
 func New(file string) *dic {
 	ins := &dic{
 		name:  file,
 		trans: make(map[string]string),
+		max:   0,
 	}
 	ft := filetool.GetInstance()
 	oldEncode, _ := ft.SetEncoding(file, "utf8")
@@ -33,13 +36,22 @@ func New(file string) *dic {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic abnormal] file:%s, line:%d, data:%s", file, i+1, v))
 			continue
 		}
+		sindex := string(linev[0])
+		nLine, err := strconv.Atoi(sindex)
+		if err != nil {
+			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic Atoi error] file:%s, line:%d, data:%s", file, i+1, sindex))
+			continue
+		}
+		if nLine > ins.max {
+			ins.max = nLine
+		}
 		key := string(linev[2])
 		if _, ok := ins.trans[key]; ok {
 			log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, fmt.Sprintf("[dic repeat] file:%s, line:%d, data:%s", file, i+1, key))
 			continue
 		}
 		ins.trans[key] = string(linev[3])
-		ins.line = append(ins.line, bytes.Join(linev[1:], []byte{0x09}))
+		ins.line = append(ins.line, v)
 	}
 	return ins
 }
@@ -57,7 +69,8 @@ func (d *dic) Append(path string, text []byte, trans []byte) bool {
 		return false
 	}
 	d.trans[stext] = strans
-	line := []byte(fmt.Sprintf("%s\t%s\t%s", path, stext, strans))
+	d.max += 1
+	line := []byte(fmt.Sprintf("%d\t%s\t%s\t%s", d.max, path, stext, strans))
 	d.line = append(d.line, line)
 	return true
 }
@@ -68,9 +81,7 @@ func (d *dic) Save() {
 	defer ft.SetEncoding(d.name, oldEncode)
 	var all [][]byte
 	all = append(all, []byte("ID\tFile\tOriginal\tTranslation"))
-	for k, v := range d.line {
-		all = append(all, []byte(fmt.Sprintf("%d\t%s", k+1, v)))
-	}
+	all = append(all, d.line...)
 	err := ft.SaveFileLine(d.name, all)
 	if err != nil {
 		log.WriteLog(log.LOG_FILE|log.LOG_PRINT, log.LOG_ERROR, err)
