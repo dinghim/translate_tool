@@ -1,13 +1,9 @@
-translate_tool
+# translate_tool
 
-Description
------------
-
+# Description
 Text translate tool
 
-How to use
--------------
-
+# How to use
 Build after Set GOPATH=Current catalog
 
 Trans is a text translate tool that can help you to extract all chinese from
@@ -30,10 +26,9 @@ Flags:
 Use "trans [command] --help" for more information about a command.
 ```
 
-SubCommand:
+## SubCommand
 
-getstring:
-	Extract Chinese characters from a file or directory and save it to a text file
+getstring: Extract Chinese characters from a file or directory and save it to a text file
 ```
 Usage:
     trans getstring [flags]
@@ -42,8 +37,7 @@ Flags:
     -d, --db string    Translation data dictionary (default "dictionary.txt")
     -s, --src string   The extracted file or directory path
 ```
-translate:
-	Translation using dictionary file or directory. If the output does not exist will be created automatically
+translate: Translation using dictionary file or directory. If the output does not exist will be created automatically
 ```
  Usage:
     trans translate [flags]
