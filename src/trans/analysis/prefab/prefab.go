@@ -60,6 +60,9 @@ func (p *prefab) uc2hanzi(uc string) (string, error) {
 }
 
 func (p *prefab) filter(text []byte) bool {
+	if len(bytes.TrimSpace(text)) <= 0 {
+		return true
+	}
 	for i := 0; i < len(text); i++ {
 		if text[i]&0x80 != 0 {
 			return false

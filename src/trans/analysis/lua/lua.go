@@ -1,6 +1,7 @@
 package lua
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 )
@@ -35,6 +36,9 @@ func New() *lua {
 }
 
 func (l *lua) filter(text []byte) bool {
+	if len(bytes.TrimSpace(text)) <= 0 {
+		return true
+	}
 	for i := 0; i < len(text); i++ {
 		if text[i]&0x80 != 0 {
 			return false

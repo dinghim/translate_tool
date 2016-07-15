@@ -1,5 +1,9 @@
 package tabfile
 
+import (
+	"bytes"
+)
+
 var (
 	cr byte = 0x0d //回车CR
 	lf byte = 0x0a //换行LF
@@ -18,6 +22,9 @@ func New() *tabfile {
 }
 
 func (t *tabfile) filter(text []byte) bool {
+	if len(bytes.TrimSpace(text)) <= 0 {
+		return true
+	}
 	for i := 0; i < len(text); i++ {
 		if text[i]&0x80 != 0 {
 			return false
